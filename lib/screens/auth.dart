@@ -65,7 +65,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   right: 20,
                 ),
                 width: 200,
-                child: Image.asset('assests/images/MobileMindset.jpg'),
+                child: Image.asset('assests/images/MobileMindset.jpg',),
               ),
               Card(
                 margin: const EdgeInsets.all(20),
