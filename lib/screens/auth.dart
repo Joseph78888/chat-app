@@ -1,10 +1,11 @@
 import 'dart:io';
 
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:message_app/widgets/user_image_picker.dart';
+import '/widgets/user_image_picker.dart';
 
 final _firebase = FirebaseAuth.instance;
 
@@ -19,8 +20,10 @@ class _AuthScreenState extends State<AuthScreen> {
   final _form = GlobalKey<FormState>();
 
   var _isLogin = true;
-  var _enteredEail = '';
+  var _isAuthenticating = false;
+  var _enteredEmail = '';
   var _enteredPassword = '';
+  var _enteredName = '';
   File? _selectedImage;
 
   void _submit() async {
@@ -32,25 +35,53 @@ class _AuthScreenState extends State<AuthScreen> {
 
     _form.currentState!.save();
     try {
+      setState(() {
+        _isAuthenticating = true;
+      });
       if (_isLogin) {
         // log users in
         final userCredentials = await _firebase.signInWithEmailAndPassword(
-          email: _enteredEail,
+          email: _enteredEmail,
           password: _enteredPassword,
         );
       } else {
         final userCredentials = await _firebase.createUserWithEmailAndPassword(
-          email: _enteredEail,
+          email: _enteredEmail,
           password: _enteredPassword,
         );
 
-        final storagRef = FirebaseStorage.instance
-            .ref()
-            .child('user_images')
-            .child('${userCredentials.user!.uid}.jpg');
-        await storagRef
-          ..putFile(_selectedImage!);
-        final imageUrl = await storagRef.getDownloadURL();
+        // final storagRef = FirebaseStorage.instance
+        //     .ref()
+        //     .child('user_images')
+        //     .child('${userCredentials.user!.uid}.jpg');
+
+        // await storagRef
+        //   ..putFile(_selectedImage!);
+        // final imageUrl = await storagRef.getDownloadURL();
+
+        // DatabaseReference ref = FirebaseDatabase.instance.ref();
+
+        // await FirebaseDatabase.instance
+        //     .ref()
+        //     .child('users')
+        //     .child(userCredentials.user!.uid)
+        //     .set({
+        //       'email': _enteredEail,
+        //       'image_url': 'imageUrl',
+        //       'usrer_name': '',
+        //       'created_at': DateTime.now().toIso8601String(),
+        //       'password': _enteredPassword,
+        //       'text': '',
+        //     });
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userCredentials.user!.uid)
+            .set({
+              'email': _enteredEmail,
+              'image_url': 'imageUrl',
+              'user name': _enteredName,
+            });
       }
     } on FirebaseAuthException catch (error) {
       if (error.code == 'email-already-in-use') {
@@ -60,6 +91,9 @@ class _AuthScreenState extends State<AuthScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(error.message ?? 'Authontication faild!.')),
       );
+      setState(() {
+        _isAuthenticating = false;
+      });
     }
   }
 
@@ -101,6 +135,8 @@ class _AuthScreenState extends State<AuthScreen> {
                                 _selectedImage = pickedImage;
                               },
                             ),
+
+                          // ======== USER EMAIL ===============================================
                           const SizedBox(height: 12),
                           TextFormField(
                             decoration: const InputDecoration(
@@ -124,11 +160,37 @@ class _AuthScreenState extends State<AuthScreen> {
                               return null;
                             },
                             onSaved: (newValue) {
-                              _enteredEail = newValue!;
+                              _enteredEmail = newValue!;
                             },
                           ),
-                          SizedBox(height: 16),
 
+                          // ======= USER NAME ================================================
+                          const SizedBox(height: 16),
+                          if (!_isLogin)
+                            TextFormField(
+                              decoration: const InputDecoration(
+                                labelText: 'user name',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(12),
+                                  ),
+                                ),
+                                hintText: 'yousif',
+                              ),
+                              autocorrect: false,
+                              validator: (value) {
+                                if (value == null || value.trim().length < 4) {
+                                  return 'please enter a valid user name.';
+                                }
+                                return null;
+                              },
+                              onSaved: (newValue) {
+                                _enteredName = newValue!;
+                              },
+                            ),
+
+                          // =========== USER PASSWORD ============================================
+                          SizedBox(height: 16),
                           TextFormField(
                             decoration: const InputDecoration(
                               labelText: 'Password',
@@ -153,37 +215,42 @@ class _AuthScreenState extends State<AuthScreen> {
                             },
                           ),
 
+                          // ========= 'Login' : 'Signup' BUTTONS ==============================================
                           SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.primaryContainer,
-                                elevation: 0,
+                          if (_isAuthenticating) CircularProgressIndicator(),
+                          if (!_isAuthenticating)
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.primaryContainer,
+                                  elevation: 0,
+                                ),
+                                onPressed: _submit,
+                                child: Text(_isLogin ? 'Login' : 'Signup'),
                               ),
-                              onPressed: _submit,
-                              child: Text(_isLogin ? 'Login' : 'Signup'),
                             ),
-                          ),
-                          SizedBox(height: 12),
 
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _isLogin = !_isLogin;
-                                });
-                              },
-                              child: Text(
-                                _isLogin
-                                    ? 'Create new account'
-                                    : 'I already have an account',
+                          // ========='Create new account' OutlinedButton ===============================================
+                          SizedBox(height: 12),
+                          if (!_isAuthenticating)
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _isLogin = !_isLogin;
+                                  });
+                                },
+                                child: Text(
+                                  _isLogin
+                                      ? 'Create new account'
+                                      : 'I already have an account',
+                                ),
                               ),
                             ),
-                          ),
                         ],
                       ),
                     ),
