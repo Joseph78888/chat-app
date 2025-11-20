@@ -1,5 +1,9 @@
+import 'dart:io';
+
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:message_app/widgets/user_image_picker.dart';
 
 final _firebase = FirebaseAuth.instance;
@@ -17,10 +21,12 @@ class _AuthScreenState extends State<AuthScreen> {
   var _isLogin = true;
   var _enteredEail = '';
   var _enteredPassword = '';
+  File? _selectedImage;
 
   void _submit() async {
     final isValid = _form.currentState!.validate();
-    if (!isValid) {
+    if (!isValid || !_isLogin && _selectedImage == null) {
+      // show error message...
       return;
     }
 
@@ -37,6 +43,14 @@ class _AuthScreenState extends State<AuthScreen> {
           email: _enteredEail,
           password: _enteredPassword,
         );
+
+        final storagRef = FirebaseStorage.instance
+            .ref()
+            .child('user_images')
+            .child('${userCredentials.user!.uid}.jpg');
+        await storagRef
+          ..putFile(_selectedImage!);
+        final imageUrl = await storagRef.getDownloadURL();
       }
     } on FirebaseAuthException catch (error) {
       if (error.code == 'email-already-in-use') {
@@ -81,7 +95,12 @@ class _AuthScreenState extends State<AuthScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (!_isLogin) const UserImagePicker(),
+                          if (!_isLogin)
+                            UserImagePicker(
+                              onPickImage: (pickedImage) {
+                                _selectedImage = pickedImage;
+                              },
+                            ),
                           const SizedBox(height: 12),
                           TextFormField(
                             decoration: const InputDecoration(
