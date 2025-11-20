@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:message_app/widgets/user_image_picker.dart';
 
 final _firebase = FirebaseAuth.instance;
 
@@ -51,7 +52,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.primary,
+      // backgroundColor: Theme.of(context).colorScheme.primary,
       body: Center(
         child: SingleChildScrollView(
           child: Column(
@@ -64,10 +65,13 @@ class _AuthScreenState extends State<AuthScreen> {
                   left: 20,
                   right: 20,
                 ),
-                width: 200,
-                child: Image.asset('assests/images/MobileMindset.jpg',),
+                width: 300,
+                child: Image.asset(
+                  'assests/images/cloud_storage_-_darkmode.png',
+                ),
               ),
               Card(
+                color: const Color.fromARGB(255, 28, 28, 28),
                 margin: const EdgeInsets.all(20),
                 child: SingleChildScrollView(
                   child: Padding(
@@ -77,6 +81,8 @@ class _AuthScreenState extends State<AuthScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          if (!_isLogin) const UserImagePicker(),
+                          const SizedBox(height: 12),
                           TextFormField(
                             decoration: const InputDecoration(
                               labelText: 'Email Address',

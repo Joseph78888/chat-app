@@ -11,7 +11,7 @@ class Chatscreen extends StatelessWidget {
         title: Text('flutterChat'),
         actions: [
           IconButton(
-            icon: Icon(Icons.logout_rounded),
+            icon: Icon(Icons.logout_rounded, color: Theme.of(context).colorScheme.primary,),
             onPressed: () {
               FirebaseAuth.instance.signOut();
             },
