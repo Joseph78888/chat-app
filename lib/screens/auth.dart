@@ -28,27 +28,23 @@ class _AuthScreenState extends State<AuthScreen> {
 
   void _submit() async {
     final isValid = _form.currentState!.validate();
+
     if (!isValid || !_isLogin && _selectedImage == null) {
       // show error message...
       return;
     }
 
     _form.currentState!.save();
+
     try {
       setState(() {
         _isAuthenticating = true;
       });
+
       if (_isLogin) {
-        // log users in
-        final userCredentials = await _firebase.signInWithEmailAndPassword(
-          email: _enteredEmail,
-          password: _enteredPassword,
-        );
+        await _logInUser();
       } else {
-        final userCredentials = await _firebase.createUserWithEmailAndPassword(
-          email: _enteredEmail,
-          password: _enteredPassword,
-        );
+        UserCredential userCredentials = await _signUpUser();
 
         // final storagRef = FirebaseStorage.instance
         //     .ref()
@@ -59,29 +55,7 @@ class _AuthScreenState extends State<AuthScreen> {
         //   ..putFile(_selectedImage!);
         // final imageUrl = await storagRef.getDownloadURL();
 
-        // DatabaseReference ref = FirebaseDatabase.instance.ref();
-
-        // await FirebaseDatabase.instance
-        //     .ref()
-        //     .child('users')
-        //     .child(userCredentials.user!.uid)
-        //     .set({
-        //       'email': _enteredEail,
-        //       'image_url': 'imageUrl',
-        //       'usrer_name': '',
-        //       'created_at': DateTime.now().toIso8601String(),
-        //       'password': _enteredPassword,
-        //       'text': '',
-        //     });
-
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userCredentials.user!.uid)
-            .set({
-              'email': _enteredEmail,
-              'image_url': 'imageUrl',
-              'user name': _enteredName,
-            });
+        await _uploadeUserDataToFirebase(userCredentials);
       }
     } on FirebaseAuthException catch (error) {
       if (error.code == 'email-already-in-use') {
@@ -95,6 +69,34 @@ class _AuthScreenState extends State<AuthScreen> {
         _isAuthenticating = false;
       });
     }
+  }
+
+  Future<void> _uploadeUserDataToFirebase(
+    UserCredential userCredentials,
+  ) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userCredentials.user!.uid)
+        .set({
+          'email': _enteredEmail,
+          'imageUrl': 'imageUrl',
+          'userName': _enteredName,
+        });
+  }
+
+  Future<UserCredential> _signUpUser() async {
+    final userCredentials = await _firebase.createUserWithEmailAndPassword(
+      email: _enteredEmail,
+      password: _enteredPassword,
+    );
+    return userCredentials;
+  }
+
+  Future<void> _logInUser() async {
+    final userCredentials = await _firebase.signInWithEmailAndPassword(
+      email: _enteredEmail,
+      password: _enteredPassword,
+    );
   }
 
   @override
