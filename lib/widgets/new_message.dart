@@ -136,7 +136,7 @@ class _NewMessageState extends State<NewMessage> {
                   borderRadius: BorderRadius.all(Radius.circular(30)),
                 ),
                 // labelText: 'send message...',
-                fillColor: Color.fromARGB(255, 36, 36, 36),
+                fillColor: Color.fromARGB(255, 237, 237, 237),
                 filled: true,
                 hintText: 'What\'s up',
               ),
